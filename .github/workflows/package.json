@@ -1,0 +1,27 @@
+{
+  "name": "github-fetcher",
+  "version": "1.0.0",
+  "description": "A GitHub API fetcher with pagination support",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "jest",
+    "build": "echo \"No build step defined\"",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "github",
+    "octokit",
+    "pagination",
+    "fetch"
+  ],
+  "author": "David Okeamah",
+  "license": "MIT",
+  "dependencies": {
+    "octokit": "^2.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0"
+  }
+}

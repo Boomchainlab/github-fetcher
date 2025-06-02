@@ -18,10 +18,10 @@
   "author": "David Okeamah",
   "license": "MIT",
   "dependencies": {
-    "octokit": "^3.1.2"
+    "octokit": "^5.0.0"
   },
   "devDependencies": {
-    "eslint": "^8.0.0",
+    "eslint": "^9.0.0",
     "jest": "^29.0.0"
   }
 }

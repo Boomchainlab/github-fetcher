@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on: [push, pull_request]
 
 jobs:
@@ -11,10 +14,10 @@ jobs:
         node-version: [18, 20]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - name: Cache node modules
-        uses: actions/cache@v4
+        uses: actions/cache@v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}

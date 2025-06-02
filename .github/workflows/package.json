@@ -18,7 +18,7 @@
   "author": "David Okeamah",
   "license": "MIT",
   "dependencies": {
-    "octokit": "^2.0.0"
+    "octokit": "^3.1.2"
   },
   "devDependencies": {
     "eslint": "^8.0.0",

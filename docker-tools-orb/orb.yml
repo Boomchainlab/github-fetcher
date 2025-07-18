@@ -1,0 +1,75 @@
+version: 2.1
+
+description: |
+  Docker tools and credential helpers for Boomchainlab CI pipelines.
+
+display:
+  home_url: https://boomchainlab.com
+  source_url: https://github.com/Boomchainlab/github-fetcher
+
+orbs:
+  jq: circleci/jq@2.2.0
+
+commands:
+  configure-creds-store:
+    description: Configure Docker credential helper dynamically.
+    parameters:
+      docker-config-path:
+        type: string
+        default: "$HOME/.docker/config.json"
+        description: Path to Docker config file.
+      helper-name:
+        type: enum
+        enum: ["", "pass", "osxkeychain"]
+        default: ""
+        description: Credential helper to use.
+    steps:
+      - jq/install
+      - run:
+          name: Configure Docker credentials store
+          environment:
+            PARAM_DOCKER_CONFIG_PATH: <<parameters.docker-config-path>>
+            PARAM_HELPER_NAME: <<parameters.helper-name>>
+          command: |
+            #!/usr/bin/env bash
+
+            expand_env_vars_with_prefix() {
+              if [ "$#" -eq 0 ]; then
+                >&2 printf '%s\n' "Prefix is required."
+                return 1
+              fi
+              local prefix="$1"
+              local env_vars
+              env_vars="$(printenv | grep "^$prefix")"
+              [ -z "$env_vars" ] && { >&2 echo "No env vars with prefix: $prefix"; return 1; }
+              while IFS= read -ra line; do
+                local var_value="${line#*=}"
+                local var_name="${line%="$var_value"}"
+                local expanded_value
+                expanded_value="$(eval echo "$var_value")"
+                printf -v "$var_name" "%s" "$expanded_value"
+              done <<< "$env_vars"
+              return 0
+            }
+
+            expand_env_vars_with_prefix "PARAM_"
+
+            HELPER_NAME="$PARAM_HELPER_NAME"
+            DOCKER_CONFIG_PATH="$(eval echo ${PARAM_DOCKER_CONFIG_PATH})"
+
+            if [ -z "$HELPER_NAME" ]; then
+              if uname | grep -q "Darwin"; then
+                HELPER_NAME="osxkeychain"
+              else
+                HELPER_NAME="pass"
+              fi
+            fi
+
+            if [ ! -e "$DOCKER_CONFIG_PATH" ]; then
+              echo "$DOCKER_CONFIG_PATH does not exist, creating..."
+              mkdir -p "$(dirname "$DOCKER_CONFIG_PATH")"
+              echo "{}" > "$DOCKER_CONFIG_PATH"
+            fi
+
+            jq --arg credsStore "$HELPER_NAME" '. + {credsStore: $credsStore}' "$DOCKER_CONFIG_PATH" > /tmp/docker-config.json
+            mv /tmp/docker-config.json "$DOCKER_CONFIG_PATH"

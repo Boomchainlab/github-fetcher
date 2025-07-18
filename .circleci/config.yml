@@ -1,0 +1,77 @@
+version: 2.1
+
+orbs:
+  shellcheck: circleci/shellcheck@3.4.0
+
+jobs:
+  shellcheck-lint:
+    executor: shellcheck/default
+    steps:
+      - checkout
+
+      - shellcheck/check:
+          path: "./scripts"
+          shell: "bash"
+
+      - run:
+          name: Save ShellCheck log
+          command: |
+            mkdir -p artifacts
+            shellcheck ./scripts/*.sh > artifacts/shellcheck.log || true
+
+      - persist_to_workspace:
+          root: artifacts
+          paths:
+            - shellcheck.log
+
+      - store_artifacts:
+          path: artifacts/shellcheck.log
+          destination: shellcheck-log
+
+  notify-email:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run:
+          name: Install msmtp
+          command: |
+            sudo apt update
+            sudo apt install -y msmtp msmtp-mta mailutils
+
+      - run:
+          name: Configure msmtp
+          command: |
+            cat <<EOF > ~/.msmtprc
+            defaults
+            auth           on
+            tls            on
+            tls_trust_file /etc/ssl/certs/ca-certificates.crt
+            logfile        ~/.msmtp.log
+
+            account        gmail
+            host           smtp.gmail.com
+            port           587
+            from           support@boomchainlab.com
+            user           support@boomchainlab.com
+            password       ${GMAIL_APP_PASSWORD}
+
+            account default : gmail
+            EOF
+
+            chmod 600 ~/.msmtprc
+
+      - run:
+          name: Send Email via Gmail
+          command: |
+            echo "ShellCheck failed on ${CIRCLE_PROJECT_REPONAME}, branch: ${CIRCLE_BRANCH}, commit: ${CIRCLE_SHA1}" | mail -s "❌ CI Alert: ShellCheck Failed" -aFrom:support@boomchainlab.com ${ALERT_EMAIL}
+
+workflows:
+  shellcheck-ci:
+    jobs:
+      - shellcheck-lint
+      - notify-email:
+          requires:
+            - shellcheck-lint
+          filters:
+            branches:
+              only: main

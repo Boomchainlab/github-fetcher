@@ -1,0 +1,18 @@
+version: 2.1
+
+orbs:
+  docker-tools: ./docker-tools-orb
+
+jobs:
+  test-creds-config:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - docker-tools/configure-creds-store:
+          helper-name: "pass"
+
+workflows:
+  validate-creds-config:
+    jobs:
+      - test-creds-config
